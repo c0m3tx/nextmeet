@@ -1,0 +1,3 @@
+pub const EMAIL: &str = "your-email@gmail.com";
+pub const CLIENT_ID: &str = "Your client id";
+pub const CLIENT_SECRET: &str = "Your client secret";
