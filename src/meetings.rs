@@ -104,10 +104,17 @@ impl Display for Meeting {
 impl Meeting {
     pub fn get_link(&self) -> Option<String> {
         let description_link = self.description.as_ref().and_then(|description| {
-            Regex::new("https://app.gather.town[^\\s\"]*")
+            let gather_link = Regex::new("https://app.gather.town[^\\s\"]*")
                 .unwrap()
                 .find(&description)
-                .map(|m| m.as_str().into())
+                .map(|m| m.as_str().into());
+
+            let zoom_link = Regex::new("https://[^\\s\"]*zoom.us[^\\s\"]*")
+                .unwrap()
+                .find(&description)
+                .map(|m| m.as_str().into());
+
+            gather_link.or(zoom_link)
         });
 
         description_link.or_else(|| self.hangout_link.clone())
@@ -234,14 +241,17 @@ mod tests {
     }
 
     #[test]
-    fn does_not_get_zoom_link() {
+    fn gets_zoom_link() {
         let m = Meeting {
-            description: Some("This is on zoom! https://zoom.us/meetings/XXXXX".to_string()),
+            description: Some("This is on zoom! https://us02web.zoom.us/j/88888888888".to_string()),
             hangout_link: Some("https://meet.google.com/uq-q-q-q-q".to_string()),
             ..Default::default()
         };
 
-        assert_eq!(m.get_link().unwrap(), "https://meet.google.com/uq-q-q-q-q");
+        assert_eq!(
+            m.get_link().unwrap(),
+            "https://us02web.zoom.us/j/88888888888"
+        );
     }
 
     #[test]
