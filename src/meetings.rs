@@ -28,7 +28,7 @@ struct Attendee {
 #[derive(Deserialize, Serialize, Clone, Debug, Default)]
 struct MeetTime {
     #[serde(rename = "dateTime")]
-    date_time: String,
+    date_time: Option<String>,
 }
 
 #[derive(Deserialize, Clone, Debug, Default)]
@@ -52,7 +52,8 @@ struct FormattedDateTime {
 fn extract_date_time(date_time: &Option<MeetTime>) -> Option<FormattedDateTime> {
     date_time
         .as_ref()
-        .and_then(|d| DateTime::parse_from_rfc3339(&d.date_time).ok())
+        .and_then(|d| d.date_time.as_ref())
+        .and_then(|d| DateTime::parse_from_rfc3339(d).ok())
         .map(|d| FormattedDateTime {
             time: d.with_timezone(&Local).format("%H:%M").to_string(),
             date: d.with_timezone(&Local).format("%d/%m/%Y").to_string(),
@@ -122,15 +123,19 @@ impl Meeting {
 
     fn start(&self) -> Result<DateTime<Local>, Box<dyn Error>> {
         match &self.start {
-            None => Err("No start time".into()),
-            Some(start) => Ok(start.date_time.parse()?),
+            Some(MeetTime {
+                date_time: Some(date_time),
+            }) => Ok(date_time.parse()?),
+            _ => Err("No start time".into()),
         }
     }
 
     fn end(&self) -> Result<DateTime<Local>, Box<dyn Error>> {
         match &self.end {
-            None => Err("No end time".into()),
-            Some(end) => Ok(end.date_time.parse()?),
+            Some(MeetTime {
+                date_time: Some(date_time),
+            }) => Ok(date_time.parse()?),
+            _ => Err("No end time".into()),
         }
     }
 
