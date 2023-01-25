@@ -1,4 +1,12 @@
+#[cfg(not(test))]
 mod config;
+
+#[cfg(test)]
+mod config {
+    pub const EMAIL: &str = "my-email@example.org";
+    pub const CLIENT_ID: &str = "some_client_id";
+    pub const CLIENT_SECRET: &str = "client_secret";
+}
 
 mod tokens;
 
