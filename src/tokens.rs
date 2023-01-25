@@ -75,16 +75,13 @@ impl Tokens {
     pub fn do_login() -> Result<Tokens, Box<dyn Error>> {
         let client_id = crate::config::CLIENT_ID;
         let client_secret = crate::config::CLIENT_SECRET;
-
         let client = BasicClient::new(
             ClientId::new(client_id.to_string()),
             Some(ClientSecret::new(client_secret.to_string())),
             AuthUrl::new("https://accounts.google.com/o/oauth2/auth".to_string())?,
-            Some(TokenUrl::new(
-                "https://oauth2.googleapis.com/token".to_string(),
-            )?),
+            TokenUrl::new("https://oauth2.googleapis.com/token".to_string()).ok(),
         )
-        .set_redirect_url(RedirectUrl::new("http://127.0.0.1:35426/auth".to_string())?.into());
+        .set_redirect_url(RedirectUrl::new("http://127.0.0.1:35426/auth".to_string())?);
 
         let (pkce_challenge, pkce_verifier) = PkceCodeChallenge::new_random_sha256();
         // Generate the full authorization URL.

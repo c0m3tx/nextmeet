@@ -160,8 +160,8 @@ fn retrieve_tokens() -> Result<Tokens, Box<dyn Error>> {
 
 async fn today_meetings_json(token: &str) -> Result<String, Box<dyn Error>> {
     let now = Local::now().date();
-    let beginning_of_day = now.and_hms(0, 0, 0).to_rfc3339();
-    let end_of_day = now.and_hms(23, 59, 59).to_rfc3339();
+    let beginning_of_day = now.and_hms_opt(0, 0, 0).unwrap().to_rfc3339();
+    let end_of_day = now.and_hms_opt(23, 59, 59).unwrap().to_rfc3339();
 
     let mut headers = header::HeaderMap::new();
     let token = format!("Bearer {token}");
