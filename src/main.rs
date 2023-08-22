@@ -18,11 +18,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut debug = false;
     let mut json = false;
     let mut machine_full = false;
+    let mut additional_links = false;
+
     std::env::args().skip(1).for_each(|opt| match opt.as_str() {
         "-m" => only_link = true,
         "-d" => debug = true,
         "-j" => json = true,
         "-mf" => machine_full = true,
+        "-al" => additional_links = true,
         _ => (),
     });
 
@@ -46,6 +49,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let result = meetings::retrieve_with_tokens(false, tokens)
                 .await?
                 .map(|m| serde_json::to_string(&m).unwrap())
+                .unwrap_or_else(String::new);
+
+            println!("{result}");
+            std::process::exit(0);
+        }
+
+        eprintln!("Error: Could not refresh tokens");
+        std::process::exit(1);
+    }
+
+    if additional_links {
+        let tokens = tokens::Tokens::load();
+
+        if let Ok(tokens) = tokens.and_then(|t| t.refresh()) {
+            let result = meetings::retrieve_with_tokens(false, tokens)
+                .await?
+                .map(|m| m.get_other_links().join(" "))
                 .unwrap_or_else(String::new);
 
             println!("{result}");

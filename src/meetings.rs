@@ -72,6 +72,7 @@ impl Serialize for Meeting {
         s.serialize_field("summary", &self.summary)?;
         s.serialize_field("start", &start)?;
         s.serialize_field("end", &end)?;
+        s.serialize_field("description", &self.description)?;
         s.serialize_field("hangoutLink", &self.hangout_link)?;
         s.end()
     }
@@ -119,6 +120,19 @@ impl Meeting {
         });
 
         description_link.or_else(|| self.hangout_link.clone())
+    }
+
+    pub fn get_other_links(&self) -> Vec<String> {
+        let rx = Regex::new("href=\"([^\"]+)").unwrap();
+
+        self.description
+            .as_ref()
+            .map(|description| {
+                rx.captures_iter(description)
+                    .map(|m| m.get(1).unwrap().as_str().to_owned())
+                    .collect::<Vec<String>>()
+            })
+            .unwrap_or_default()
     }
 
     fn start(&self) -> Result<DateTime<Local>, Box<dyn Error>> {
@@ -299,5 +313,42 @@ mod tests {
         };
 
         assert!(m.accepted());
+    }
+
+    #[test]
+    fn test_other_links_without_description() {
+        let m = Meeting::default();
+        assert_eq!(m.get_other_links().len(), 0);
+    }
+
+    #[test]
+    fn test_other_links_in_description() {
+        let m = Meeting {
+            description: Some(String::from(
+                "Related card: <a href=\"http://some-card-link.ext\">Link content</a>",
+            )),
+            ..Default::default()
+        };
+        assert_eq!(
+            m.get_other_links().first().unwrap().as_str(),
+            "http://some-card-link.ext"
+        );
+    }
+
+    #[test]
+    fn test_multiple_links_in_description() {
+        let m = Meeting {
+            description: Some(String::from(
+                "Related card: <a href=\"http://some-card-link.ext\">Link content</a> and <a href=\"http://some-other-link.ext\">Other content</a>",
+            )),
+            ..Default::default()
+        };
+        let result = m.get_other_links();
+        assert_eq!(result.len(), 2);
+        assert_eq!(result.get(0).unwrap().as_str(), "http://some-card-link.ext");
+        assert_eq!(
+            result.get(1).unwrap().as_str(),
+            "http://some-other-link.ext"
+        );
     }
 }
