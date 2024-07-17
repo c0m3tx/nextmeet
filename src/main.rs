@@ -19,6 +19,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut json = false;
     let mut machine_full = false;
     let mut additional_links = false;
+    let mut all_meets = false;
 
     std::env::args().skip(1).for_each(|opt| match opt.as_str() {
         "-m" => only_link = true,
@@ -26,6 +27,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "-j" => json = true,
         "-mf" => machine_full = true,
         "-al" => additional_links = true,
+        "-a" => all_meets = true,
         _ => (),
     });
 
@@ -74,6 +76,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         eprintln!("Error: Could not refresh tokens");
         std::process::exit(1);
+    }
+
+    if all_meets {
+        for meet in meetings::retrieve_all().await? {
+            println!("{}\n", meet);
+        }
+        std::process::exit(0);
     }
 
     let meeting = meetings::retrieve(debug).await?;

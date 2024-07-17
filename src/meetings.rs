@@ -230,6 +230,18 @@ pub async fn retrieve(debug: bool) -> Result<Option<Meeting>, Box<dyn Error>> {
     retrieve_with_tokens(debug, tokens).await
 }
 
+pub async fn retrieve_all() -> Result<Vec<Meeting>, Box<dyn Error>> {
+    let tokens = retrieve_tokens()?;
+    let meets = today_meetings(&tokens.access_token, false).await?;
+    let mut meets: Vec<_> = meets
+        .items
+        .into_iter()
+        .filter(|m| m.start().is_ok() && m.accepted() && m.get_link().is_some())
+        .collect();
+    meets.sort_by_key(|m| m.start().unwrap());
+    Ok(meets)
+}
+
 pub async fn retrieve_with_tokens(
     debug: bool,
     tokens: Tokens,
