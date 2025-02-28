@@ -105,21 +105,23 @@ impl Display for Meeting {
 
 impl Meeting {
     pub fn get_link(&self) -> Option<String> {
-        let description_link = self.description.as_ref().and_then(|description| {
-            let gather_link = Regex::new("https://app.gather.town[^\\s\"]*")
-                .unwrap()
-                .find(&description)
-                .map(|m| m.as_str().into());
-
-            let zoom_link = Regex::new("https://[^\\s\"]*zoom.us[^\\s\"]*")
-                .unwrap()
-                .find(&description)
-                .map(|m| m.as_str().into());
-
-            gather_link.or(zoom_link)
-        });
-
-        description_link.or_else(|| self.hangout_link.clone())
+        self.description
+            .as_ref()
+            .and_then(|description| {
+                [
+                    "https://app.gather.town[^\\s\"]*",
+                    "https://[^\\s\"]*zoom.us[^\\s\"]*",
+                    "https://stream.meet.google.com[^\\s\"]*",
+                ]
+                .into_iter()
+                .find_map(|url| {
+                    Regex::new(url)
+                        .unwrap()
+                        .find(&description)
+                        .map(|m| m.as_str().into())
+                })
+            })
+            .or_else(|| self.hangout_link.clone())
     }
 
     pub fn get_other_links(&self) -> Vec<String> {
